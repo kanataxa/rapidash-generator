@@ -1,5 +1,6 @@
 package main
 
+//go:generate statik -src=../../template -dest=../../statik
 import (
 	"log"
 	"os"

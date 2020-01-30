@@ -4,10 +4,12 @@ import (
 	"bytes"
 	"fmt"
 	"go/format"
+	"io/ioutil"
 	"os"
-	"path/filepath"
 	"text/template"
 
+	_ "github.com/kanataxa/rapidash-generator/statik"
+	"github.com/rakyll/statik/fs"
 	"golang.org/x/xerrors"
 )
 
@@ -23,7 +25,20 @@ func (g *GoSourceGenerator) Package() string {
 }
 
 func (g *GoSourceGenerator) Generate() ([]byte, error) {
-	tmpl, err := template.ParseFiles(filepath.Join("template", "rapidash_function.tmpl"))
+	statikFS, err := fs.New()
+	if err != nil {
+		return nil, xerrors.Errorf("failed to init statik: %w", err)
+	}
+	r, err := statikFS.Open("/rapidash_function.tmpl")
+	if err != nil {
+		return nil, xerrors.Errorf("failed to open statik file: %w", err)
+	}
+	defer r.Close()
+	contents, err := ioutil.ReadAll(r)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to read file: %w", err)
+	}
+	tmpl, err := template.New("rapidash_generator").Parse(string(contents))
 	if err != nil {
 		return nil, xerrors.Errorf("failed to parse template: %w", err)
 	}
