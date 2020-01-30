@@ -13,7 +13,7 @@ import (
 	"golang.org/x/xerrors"
 )
 
-func Parse(fpath, tag string) (FunctionGenerator, error) {
+func Parse(fpath, tagField string) (FunctionGenerator, error) {
 	src, err := ioutil.ReadFile(fpath)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to read file: %w", err)
@@ -44,10 +44,10 @@ func Parse(fpath, tag string) (FunctionGenerator, error) {
 		var fields []*Field
 		for i := 0; i < structType.NumFields(); i++ {
 			tag := structType.Tag(i)
-			if !strings.Contains(tag, fmt.Sprintf("%s:", tag)) {
+			if !strings.Contains(tag, fmt.Sprintf("%s:", tagField)) {
 				continue
 			}
-			leftTrimTag := strings.Split(tag, fmt.Sprintf("%s:", tag))[1]
+			leftTrimTag := strings.Split(tag, fmt.Sprintf("%s:", tagField))[1]
 			fields = append(fields, &Field{
 				v:      structType.Field(i),
 				DBName: fmt.Sprintf("\"%s\"", strings.Split(leftTrimTag, "\"")[1]),
