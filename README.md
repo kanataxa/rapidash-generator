@@ -1,7 +1,7 @@
 # rapidash-generator
 Generate automatically [rapidash](https://github.com/knocknote/rapidash) boilerplate functions from sql or go-source
 
-# Feature
+# Features
 - Generate `rapidash.Marshaler/Unmarshaler` functions and `rapidash.Struct` from `your go source`
 
 ## Not Support(but support future)
@@ -17,7 +17,7 @@ go get github.com/kanataxa/rapidash-generator/cmd/rapi-gen
 rapi-gen -o ${entity}_rapidash.go ${entity}.go
 ```
 
-``` bash
+``` sh
 Usage:
   rapi-gen [OPTIONS]
 
@@ -31,9 +31,8 @@ Help Options:
 ```
 
 
-For example, you run `rapi-gen` with below code.
+For example, you run `rapi-gen` with below input code.
 
-input
 ``` go
 type User struct {
 	ID        uint64     `db:"id"`
@@ -117,3 +116,9 @@ func (e *User) DecodeRapidash(dec rapidash.Decoder) error {
 	return nil
 }
 ```
+
+# Author
+kanataxa(Sota Itoh)
+
+# Notes
+This tool is not still stable.
