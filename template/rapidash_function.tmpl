@@ -11,10 +11,10 @@ func (e *{{ $struct.Name }}) EncodeRapidash(enc rapidash.Encoder) error {
     {{- range $index, $field := $struct.Fields }}
         {{- if eq $field.DBName "id" }}
             if e.{{ $field.Name }} != 0 {
-                enc.{{ $field.EncodeFunc }}({{ $field.DBName }}, e.{{ $field.Name }})
+                enc.{{ $field.EncodeFunc }}({{ $field.DBName }}, {{- if $field.UnwrapType -}} {{ $field.UnwrapType }}(e.{{ $field.Name }}){{- else -}}e.{{ $field.Name }}{{- end -}})
             }
         {{- else }}
-            enc.{{ $field.EncodeFunc }}({{ $field.DBName }}, e.{{ $field.Name }})
+            enc.{{ $field.EncodeFunc }}({{ $field.DBName }}, {{- if $field.UnwrapType -}} {{ $field.UnwrapType }}(e.{{ $field.Name }}){{- else -}}e.{{ $field.Name }}{{- end -}})
         {{- end }}
     {{- end }}
     if err := enc.Error(); err != nil {
@@ -24,7 +24,7 @@ func (e *{{ $struct.Name }}) EncodeRapidash(enc rapidash.Encoder) error {
 }
 func (e *{{ $struct.Name }}) DecodeRapidash(dec rapidash.Decoder) error {
     {{- range $index, $field := $struct.Fields }}
-        e.{{ $field.Name }} = dec.{{ $field.DecodeFunc }}({{ $field.DBName }})
+        e.{{ $field.Name }} =  {{- if $field.WrapType -}}{{ $field.WrapType }}(dec.{{ $field.DecodeFunc }}({{ $field.DBName }})){{- else -}} dec.{{ $field.DecodeFunc }}({{ $field.DBName }}){{- end -}}
     {{- end }}
     if err := dec.Error(); err != nil {
         return xerrors.Errorf("failed to decode rapidash: %w", err)

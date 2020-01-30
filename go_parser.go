@@ -29,7 +29,7 @@ func Parse(filepath string) (FunctionGenerator, error) {
 			fmt.Printf("Types.Config run error: %+v\n", err)
 		},
 	}
-	pkg, err := conf.Check("rapidash_generator", fset, []*ast.File{f}, nil)
+	pkg, err := conf.Check("pkg", fset, []*ast.File{f}, nil)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to check: %w", err)
 	}
