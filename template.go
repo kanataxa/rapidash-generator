@@ -2,10 +2,11 @@ package generator
 
 import (
 	"fmt"
-	"github.com/iancoleman/strcase"
 	"go/types"
 	"log"
 	"strings"
+
+	"github.com/iancoleman/strcase"
 )
 
 type Field struct {
@@ -22,6 +23,10 @@ func (f *Field) FieldFunc() string {
 }
 
 func (f *Field) EncodeFunc() string {
+	return f.function("", f.v.Type())
+}
+
+func (f *Field) DecodeFunc() string {
 	return f.function("", f.v.Type())
 }
 

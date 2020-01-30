@@ -22,4 +22,13 @@ func (e *{{ $struct.Name }}) EncodeRapidash(enc rapidash.Encoder) error {
     }
     return nil
 }
+func (e *{{ $struct.Name }}) DecodeRapidash(dec rapidash.Decoder) error {
+    {{- range $index, $field := $struct.Fields }}
+        e.{{ $field.Name }} = dec.{{ $field.DecodeFunc }}({{ $field.DBName }})
+    {{- end }}
+    if err := dec.Error(); err != nil {
+        return xerrors.Errorf("failed to decode rapidash: %w", err)
+    }
+    return nil
+}
 {{ end }}
