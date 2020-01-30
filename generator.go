@@ -42,8 +42,8 @@ type FunctionGenerator interface {
 	Generate() ([]byte, error)
 }
 
-func Generate(config *Config) error {
-	generator, err := Parse(config)
+func Generate(path string, config *Config) error {
+	generator, err := Parse(path, config.Tag)
 	if err != nil {
 		return xerrors.Errorf("failed to parse go source: %w", err)
 	}
