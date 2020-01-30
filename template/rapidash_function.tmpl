@@ -1,4 +1,10 @@
 package {{ .Package }}
+
+import (
+    "go.knocknote.io/rapidash"
+    "golang.org/x/xerrors"
+)
+
 {{ range $index, $struct := .Structs }}
 func (e *{{ $struct.Name }}) Struct() *rapidash.Struct {
     return rapidash.NewStruct("{{ $struct.TableName }}").
