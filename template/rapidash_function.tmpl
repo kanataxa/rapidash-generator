@@ -7,4 +7,19 @@ func (e *{{ $struct.Name }}) Struct() *rapidash.Struct {
         {{ $field.FieldFunc }}({{ $field.DBName }})
     {{- end }}
 }
+func (e *{{ $struct.Name }}) EncodeRapidash(enc rapidash.Encoder) error {
+    {{- range $index, $field := $struct.Fields }}
+        {{- if eq $field.DBName "id" }}
+            if e.{{ $field.Name }} != 0 {
+                enc.{{ $field.EncodeFunc }}({{ $field.DBName }}, e.{{ $field.Name }})
+            }
+        {{- else }}
+            enc.{{ $field.EncodeFunc }}({{ $field.DBName }}, e.{{ $field.Name }})
+        {{- end }}
+    {{- end }}
+    if err := enc.Error(); err != nil {
+        return xerrors.Errorf("failed to encode rapidash: %w", err)
+    }
+    return nil
+}
 {{ end }}
