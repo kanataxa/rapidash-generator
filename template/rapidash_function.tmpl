@@ -1,0 +1,10 @@
+package {{ .Package }}
+{{ range $index, $struct := .Structs }}
+func (e *{{ $struct.Name }}) Struct() *rapidash.Struct {
+    return rapidash.NewStruct("{{ $struct.TableName }}").
+    {{- range $index, $field := $struct.Fields }}
+        {{- if ne $index 0 }}.{{ end }}
+        {{ $field.FieldFunc }}({{ $field.DBName }})
+    {{- end }}
+}
+{{ end }}
