@@ -5,4 +5,5 @@ type Config struct {
 	FilePath        string
 	Output          string
 	Tag             string
+	DependenceFiles []string
 }

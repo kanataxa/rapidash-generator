@@ -10,15 +10,17 @@ import (
 )
 
 type Options struct {
-	ShouldOverwrite bool   `short:"w" description:"force write if file is already exists"`
-	Output          string `short:"o" long:"output" description:"output file name. default: os.Stdout"`
-	Tag             string `short:"t" long:"tag" default:"db" description:"use tag name"`
+	DependenceFiles []string `short:"d" long:"deps" description:"dependency files"`
+	ShouldOverwrite bool     `short:"w" description:"force write if file is already exists"`
+	Output          string   `short:"o" long:"output" description:"output file name. default: os.Stdout"`
+	Tag             string   `short:"t" long:"tag" default:"db" description:"use tag name"`
 }
 
 var opt Options
 
 func run(path string) error {
 	if err := generator.Generate(path, &generator.Config{
+		DependenceFiles: opt.DependenceFiles,
 		ShouldOverwrite: opt.ShouldOverwrite,
 		Output:          opt.Output,
 		Tag:             opt.Tag,
