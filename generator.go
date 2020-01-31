@@ -58,7 +58,7 @@ type FunctionGenerator interface {
 }
 
 func Generate(path string, config *Config) error {
-	generator, err := Parse(path, config.Tag)
+	generator, err := Parse(path, config)
 	if err != nil {
 		return xerrors.Errorf("failed to parse go source: %w", err)
 	}

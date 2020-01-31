@@ -7,7 +7,6 @@ import (
 	"go/parser"
 	"go/token"
 	"go/types"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -15,41 +14,44 @@ import (
 	"golang.org/x/xerrors"
 )
 
-func Parse(path, tagField string) (FunctionGenerator, error) {
-	var structs []*Struct
-	root := path
-	if err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return xerrors.Errorf("failed to walk: %w", err)
-		}
-		if info.IsDir() && root != path {
-			return filepath.SkipDir
-		}
-		if filepath.Ext(path) != ".go" {
-			return nil
-		}
-		s, err := parse(path, tagField)
-		if err != nil {
-			return xerrors.Errorf("failed to parse %s: %w", path, err)
-		}
-		structs = append(structs, s...)
-
-		return nil
-	}); err != nil {
-		return nil, xerrors.Errorf("failed to walk: %w", err)
+func parseDir(path string, fset *token.FileSet, resolveFiles []string) (map[string]*ast.Package, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to open file: %w", err)
 	}
-	return &GoSourceGenerator{Structs: structs}, nil
+	defer f.Close()
+	in, err := f.Stat()
+	if err != nil {
+		return nil, xerrors.Errorf("failed to get stat: %w", err)
+	}
+	dir := path
+	if !in.IsDir() {
+		dir = filepath.Dir(path)
+	}
+	pkgs, err := parser.ParseDir(fset, dir, func(info os.FileInfo) bool {
+		if strings.Contains(info.Name(), "_test.go") {
+			return false
+		}
+		if in.IsDir() {
+			return true
+		}
+		for _, f := range resolveFiles {
+			if strings.Contains(f, info.Name()) {
+				return true
+			}
+		}
+		return strings.Contains(path, info.Name())
+	}, 0)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to parse dir: %w", err)
+	}
+	return pkgs, nil
 }
 
-func parse(fpath, tagField string) ([]*Struct, error) {
-	src, err := ioutil.ReadFile(fpath)
-	if err != nil {
-		return nil, xerrors.Errorf("failed to read file: %w", err)
-	}
-	fset := token.NewFileSet()
-	f, err := parser.ParseFile(fset, "", src, parser.Mode(0))
-	if err != nil {
-		return nil, xerrors.Errorf("failed to parse file: %w", err)
+func parsePkg(fset *token.FileSet, astPkg *ast.Package, tagField string) (FunctionGenerator, error) {
+	var files []*ast.File
+	for _, f := range astPkg.Files {
+		files = append(files, f)
 	}
 	conf := types.Config{
 		Importer: importer.Default(),
@@ -57,12 +59,13 @@ func parse(fpath, tagField string) ([]*Struct, error) {
 			fmt.Printf("Types.Config run error: %+v\n", err)
 		},
 	}
-	pkg, err := conf.Check("pkg", fset, []*ast.File{f}, nil)
+	info := &types.Info{}
+	pkg, err := conf.Check(astPkg.Name, fset, files, info)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to check: %w", err)
 	}
 	scope := pkg.Scope()
-	var strcuts []*Struct
+	var structs []*Struct
 	for _, name := range scope.Names() {
 		obj := scope.Lookup(name)
 		structType, ok := obj.Type().Underlying().(*types.Struct)
@@ -82,11 +85,30 @@ func parse(fpath, tagField string) ([]*Struct, error) {
 			})
 		}
 		if len(fields) > 0 {
-			strcuts = append(strcuts, &Struct{
+			structs = append(structs, &Struct{
 				obj:    obj,
 				Fields: fields,
 			})
 		}
 	}
-	return strcuts, nil
+	return &GoSourceGenerator{Structs: structs}, nil
+}
+
+func Parse(path string, config *Config) (FunctionGenerator, error) {
+	fset := token.NewFileSet()
+	pkgs, err := parseDir(path, fset, config.DependenceFiles)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to parse dir: %w", err)
+	}
+	if len(pkgs) > 1 {
+		return nil, xerrors.New("contain multiple package")
+	}
+	for _, astPkg := range pkgs {
+		generator, err := parsePkg(fset, astPkg, config.Tag)
+		if err != nil {
+			return nil, xerrors.Errorf("failed to parse pkg: %w", err)
+		}
+		return generator, nil
+	}
+	return nil, nil
 }
