@@ -8,12 +8,40 @@ import (
 	"go/token"
 	"go/types"
 	"io/ioutil"
+	"os"
+	"path/filepath"
 	"strings"
 
 	"golang.org/x/xerrors"
 )
 
-func Parse(fpath, tagField string) (FunctionGenerator, error) {
+func Parse(path, tagField string) (FunctionGenerator, error) {
+	var structs []*Struct
+	root := path
+	if err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return xerrors.Errorf("failed to walk: %w", err)
+		}
+		if info.IsDir() && root != path {
+			return filepath.SkipDir
+		}
+		if filepath.Ext(path) != ".go" {
+			return nil
+		}
+		s, err := parse(path, tagField)
+		if err != nil {
+			return xerrors.Errorf("failed to parse %s: %w", path, err)
+		}
+		structs = append(structs, s...)
+
+		return nil
+	}); err != nil {
+		return nil, xerrors.Errorf("failed to walk: %w", err)
+	}
+	return &GoSourceGenerator{Structs: structs}, nil
+}
+
+func parse(fpath, tagField string) ([]*Struct, error) {
 	src, err := ioutil.ReadFile(fpath)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to read file: %w", err)
@@ -60,7 +88,5 @@ func Parse(fpath, tagField string) (FunctionGenerator, error) {
 			})
 		}
 	}
-	return &GoSourceGenerator{
-		Structs: strcuts,
-	}, nil
+	return strcuts, nil
 }
