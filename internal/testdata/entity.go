@@ -10,7 +10,6 @@ type User struct {
 	NonTag    uint
 }
 
-type Value uint32
 type StrongItem struct {
 	ID    uint64  `db:"id"`
 	Name  *string `db:"name"`
